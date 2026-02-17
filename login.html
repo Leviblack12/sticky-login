@@ -23,6 +23,7 @@
   <div id="error" class="error"></div>
 
   <script>
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xdHpycGhrcm9ud2ljbWR5dGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2ODkwNjUsImV4cCI6MjA4NjI2NTA2NX0.DLyVGPyEAGAAqpZhVQ7hpu6I59wTc2ZWdpk9SQbc6T0";
     const AUTH_URL = "https://oqtzrphkronwicmdytgj.supabase.co/functions/v1/oauth-authorize";
 
     const params = new URLSearchParams(window.location.search);
@@ -43,7 +44,11 @@
       try {
         const res = await fetch(AUTH_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SUPABASE_ANON}`,
+            "apikey": SUPABASE_ANON
+          },
           body: JSON.stringify({ email, password, redirect_uri: redirectUri, state }),
         });
 
