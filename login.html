@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>StickyTask Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 420px; margin: 60px auto; padding: 20px; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ccc; font-size: 16px; }
+    button { width: 100%; padding: 12px; border-radius: 12px; border: none; background: #111; color: #fff; font-size: 16px; margin-top: 8px; }
+    .error { color: #e53935; margin-top: 10px; white-space: pre-line; }
+  </style>
+</head>
+<body>
+  <h1>StickyTask</h1>
+  <p>Sign in to link your Alexa account.</p>
+
+  <input id="email" type="email" placeholder="Email" />
+  <input id="password" type="password" placeholder="Password" />
+  <button id="signInBtn">Sign In</button>
+
+  <div id="error" class="error"></div>
+
+  <script>
+    const SUPABASE_URL = "https://oqtzrphkronwicmdytgj.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xdHpycGhrcm9ud2ljbWR5dGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2ODkwNjUsImV4cCI6MjA4NjI2NTA2NX0.DLyVGPyEAGAAqpZhVQ7hpu6I59wTc2ZWdpk9SQbc6T0";
+    const supa = window.supabase;
+
+    if (!supa) {
+      document.getElementById("error").innerText = "Supabase library failed to load.";
+    }
+
+    const supabaseClient = supa ? supa.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
+
+    const params = new URLSearchParams(window.location.search);
+    const redirectUri = params.get("redirect_uri");
+    const state = params.get("state");
+
+    document.getElementById("signInBtn").addEventListener("click", async () => {
+      if (!redirectUri) {
+        document.getElementById("error").innerText =
+          "Missing redirect_uri (this page must be opened from Alexa account linking).";
+        return;
+      }
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        document.getElementById("error").innerText = error.message;
+        return;
+      }
+
+      const accessToken = data.session.access_token;
+      const expiresIn = data.session.expires_in;
+
+      const url = new URL(redirectUri);
+      url.hash = `access_token=${encodeURIComponent(accessToken)}&token_type=Bearer&expires_in=${expiresIn}&state=${encodeURIComponent(state || "")}`;
+      window.location.href = url.toString();
+    });
+  </script>
+</body>
+</html>
