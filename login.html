@@ -24,14 +24,7 @@
 
   <script>
     const SUPABASE_URL = "https://oqtzrphkronwicmdytgj.supabase.co";
-    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xdHpycGhrcm9ud2ljbWR5dGdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA2ODkwNjUsImV4cCI6MjA4NjI2NTA2NX0.DLyVGPyEAGAAqpZhVQ7hpu6I59wTc2ZWdpk9SQbc6T0";
-    const supa = window.supabase;
-
-    if (!supa) {
-      document.getElementById("error").innerText = "Supabase library failed to load.";
-    }
-
-    const supabaseClient = supa ? supa.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
+    const AUTH_URL = "https://oqtzrphkronwicmdytgj.supabase.co/functions/v1/oauth-authorize";
 
     const params = new URLSearchParams(window.location.search);
     const redirectUri = params.get("redirect_uri");
@@ -47,18 +40,21 @@
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
 
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const res = await fetch(AUTH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, redirect_uri: redirectUri, state }),
+      });
 
-      if (error) {
-        document.getElementById("error").innerText = error.message;
+      const json = await res.json();
+      if (!res.ok || !json.code) {
+        document.getElementById("error").innerText = json.error || "Login failed";
         return;
       }
 
-      const accessToken = data.session.access_token;
-      const expiresIn = data.session.expires_in;
-
       const url = new URL(redirectUri);
-      url.hash = `access_token=${encodeURIComponent(accessToken)}&token_type=Bearer&expires_in=${expiresIn}&state=${encodeURIComponent(state || "")}`;
+      url.searchParams.set("code", json.code);
+      if (state) url.searchParams.set("state", state);
       window.location.href = url.toString();
     });
   </script>
